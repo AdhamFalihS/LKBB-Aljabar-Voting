@@ -1,77 +1,120 @@
 import { useState } from 'react';
+import { supabase } from '../utils/supabaseClient';
 
-function VoteModal({ school, onClose, onSubmit }) {
+function VoteModal({ school, onClose, onSuccess }) {
   const [voterName, setVoterName] = useState('');
   const [voteCount, setVoteCount] = useState(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const quickAmounts = [10, 20, 50, 100, 200, 250, 300, 360, 400, 450, 500];
+  const handleVote = async () => {
+    if (!voterName.trim()) return alert("PLEASE ENTER YOUR NAME!");
+    setIsSubmitting(true);
 
-  const handleIncrement = () => setVoteCount(prev => prev + 1);
-  const handleDecrement = () => setVoteCount(prev => (prev > 1 ? prev - 1 : 1));
+    try {
+      // --- LANGKAH 1: UPDATE/INSERT KE TABEL VOTERS DULU ---
+      // Karena tabel 'votes' Anda butuh 'voter_id', kita harus cari/buat ID-nya dulu.
+      let { data: voter, error: voterError } = await supabase
+        .from('voters')
+        .select('id, total_votes')
+        .eq('name', voterName.trim())
+        .maybeSingle();
 
-  const handleSubmit = () => {
-    if (!voterName.trim()) {
-      alert('Please enter your name!');
-      return;
+      let currentVoterId;
+
+      if (voter) {
+        // Jika sudah ada, update total votes-nya
+        currentVoterId = voter.id;
+        await supabase
+          .from('voters')
+          .update({ total_votes: voter.total_votes + voteCount })
+          .eq('id', voter.id);
+      } else {
+        // Jika belum ada, buat baru dan ambil ID-nya
+        const { data: newVoter, error: insError } = await supabase
+          .from('voters')
+          .insert([{ name: voterName.trim(), total_votes: voteCount }])
+          .select()
+          .single();
+        
+        if (insError) throw new Error("Gagal membuat data voter baru.");
+        currentVoterId = newVoter.id;
+      }
+
+      // --- LANGKAH 2: CATAT KE TABEL VOTES ---
+      // Sekarang kita gunakan 'voter_id' dan 'vote_count' sesuai gambar dashboard Anda
+      const { error: logError } = await supabase
+        .from('votes')
+        .insert([
+          { 
+            voter_id: currentVoterId, // Sesuaikan dengan gambar
+            school_id: school.id,     // Sesuaikan dengan gambar
+            vote_count: voteCount     // Sesuaikan dengan gambar (bukan 'amount')
+          }
+        ]);
+      
+      if (logError) {
+        console.error("Detail Error Log:", logError);
+        throw new Error("Gagal mencatat riwayat vote. Periksa apakah voter_id valid.");
+      }
+
+      // --- LANGKAH 3: UPDATE SEKOLAH (RPC) ---
+      const { error: schoolError } = await supabase.rpc('increment_vote', { 
+        school_id: school.id, 
+        increment_by: voteCount 
+      });
+      
+      if (schoolError) throw new Error("Gagal memperbarui total vote sekolah.");
+
+      alert(`Sukses! Berhasil melakukan ${voteCount} vote.`);
+      onSuccess();
+      onClose();
+
+    } catch (err) {
+      console.error("Full Error Object:", err);
+      alert(err.message);
+    } finally {
+      setIsSubmitting(false);
     }
-    onSubmit({ voterName, voteCount, schoolId: school.id });
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        {/* Close Button */}
-        <button onClick={onClose} className="close-button">✕</button>
-
-        {/* School Info */}
-        <h2>{school.name}</h2>
-        <p>SUPPORT THIS CANDIDATE</p>
-
-        {/* Voter Name Input */}
-        <input
-          type="text"
-          value={voterName}
-          onChange={e => setVoterName(e.target.value)}
-          placeholder="Enter your name"
-          className="w-full px-4 py-2 rounded-lg border-2 border-brown-800 focus:outline-none focus:ring-2 focus:ring-brown-600"
-        />
-
-        {/* Vote Counter */}
-        <div className="vote-counter">
-          <button onClick={handleDecrement} className="counter-btn">-</button>
-          <span className="counter-value">{voteCount}</span>
-          <button onClick={handleIncrement} className="counter-btn">+</button>
+    <div className="fixed inset-0 z-[999] bg-black/80 flex items-center justify-center p-4">
+      <div className="bg-[#3b2a1a] border-4 border-yellow-500 rounded-2xl w-full max-w-md p-6 relative">
+        <button onClick={onClose} className="absolute top-2 right-4 text-yellow-500 text-2xl font-bold">✕</button>
+        <h2 className="text-center text-3xl font-black text-yellow-500 italic mb-6 uppercase tracking-tighter">WANTED</h2>
+        
+        <div className="bg-[#f7e6c4] p-4 rounded-xl border-2 border-yellow-600 mb-6 text-center text-[#3b2a1a]">
+          <h3 className="font-black text-xl uppercase">{school.name}</h3>
         </div>
 
-        {/* Quick Amount Buttons */}
-        <div className="quick-amounts">
-          <p>HIDE QUICK AMOUNTS</p>
-          {quickAmounts.map(amount => (
-            <button
-              key={amount}
-              onClick={() => setVoteCount(amount)}
-              className="bg-white text-brown-900 font-semibold py-2 rounded-lg border-2 border-brown-800 hover:bg-yellow-300 transition"
-            >
-              {amount}
-            </button>
-          ))}
+        <div className="space-y-4">
+          <input 
+            type="text" 
+            placeholder="ENTER YOUR NAME"
+            value={voterName}
+            onChange={(e) => setVoterName(e.target.value)}
+            className="w-full p-3 bg-[#1a110a] border-2 border-yellow-600 text-yellow-400 font-bold outline-none rounded-lg uppercase"
+          />
+
+          <div className="flex items-center justify-between bg-black/40 p-3 rounded-lg border border-yellow-600/30">
+            <button onClick={() => setVoteCount(v => v > 1 ? v - 1 : 1)} className="text-3xl font-black text-red-500 px-4">-</button>
+            <div className="text-center">
+              <span className="text-4xl font-black text-yellow-400 block leading-none">{voteCount}</span>
+              <span className="text-[10px] text-yellow-100/50 font-bold uppercase">Amount</span>
+            </div>
+            <button onClick={() => setVoteCount(v => v + 1)} className="text-3xl font-black text-green-500 px-4">+</button>
+          </div>
+
+          <p className="text-center text-yellow-100/60 font-bold">Total: Rp {(voteCount * 1000).toLocaleString()}</p>
+
+          <button 
+            onClick={handleVote}
+            disabled={isSubmitting}
+            className={`w-full bg-yellow-500 hover:bg-yellow-400 text-[#3b2a1a] font-black py-4 rounded-xl border-b-4 border-yellow-700 active:translate-y-1 transition-all uppercase ${isSubmitting ? 'opacity-50' : ''}`}
+          >
+            {isSubmitting ? "PROCESSING..." : "⚡ CAST VOTE! ⚡"}
+          </button>
         </div>
-
-        {/* Total Price */}
-        <p>Total Price: Rp {voteCount * 1000}</p>
-
-        {/* Info Boxes */}
-        <div className="info-boxes">
-          {/* Bisa ditambahkan info tambahan jika perlu */}
-        </div>
-
-        {/* Submit Button */}
-        <button
-          onClick={handleSubmit}
-          className="bg-yellow-400 hover:bg-yellow-500 text-brown-900 font-bold py-2 px-4 rounded-lg transition"
-        >
-          ⚡ CAST VOTE!
-        </button>
       </div>
     </div>
   );

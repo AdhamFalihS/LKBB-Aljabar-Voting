@@ -1,129 +1,127 @@
-import { useState, useEffect } from 'react';
-import Countdown from '../components/Countdown';
-import SchoolCard from '../components/SchoolCard';
-import VoteModal from '../components/VoteModal';
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom"; // Tambahkan ini
+import { supabase } from "../utils/supabaseClient"; 
+import Countdown from "../components/Countdown";
+import SchoolCard from "../components/SchoolCard";
+import VoteModal from "../components/VoteModal";
 
 function Vote() {
-  const [categories, setCategories] = useState([]);
-  const [selectedCategory, setSelectedCategory] = useState('SD');
+  // Ambil searchParams dari URL
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // 1. Mapping ID terbaru
+  const categoryMap = {
+    "SMP": 1,
+    "SMA/SMK": 2
+  };
+
+  // 2. Inisialisasi state dari URL, jika tidak ada baru default ke "SMP"
+  const categoryFromUrl = searchParams.get("category");
+  const initialCategory = categoryMap[categoryFromUrl] ? categoryFromUrl : "SMP";
+
+  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [schools, setSchools] = useState([]);
   const [selectedSchool, setSelectedSchool] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const eventEndTime = '2025-02-28T23:59:59';
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // Fetch categories on mount
-  useEffect(() => {
-    fetchCategories();
-  }, []);
+  const eventEndTime = "2026-05-17T23:59:59";
 
-  // Fetch schools when category changes
-  useEffect(() => {
-    if (selectedCategory) {
-      fetchSchools(selectedCategory);
+  // Fungsi untuk ganti kategori sekaligus update URL
+  const handleCategoryChange = (cat) => {
+    setSelectedCategory(cat);
+    setSearchParams({ category: cat }); // Ini yang bikin pas refresh tetap di situ
+  };
+
+  const loadSchools = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("schools")
+        .select("*")
+        .eq("category_id", categoryMap[selectedCategory]) 
+        .order("total_votes", { ascending: false });
+
+      if (error) throw error;
+      setSchools(data || []);
+    } catch (error) {
+      console.error("Gagal mengambil data:", error.message);
+    } finally {
+      setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    loadSchools();
   }, [selectedCategory]);
 
-  const fetchCategories = async () => {
-    try {
-      const response = await fetch('/api/categories');
-      const data = await response.json();
-      setCategories(data);
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
-
-  const fetchSchools = async (category) => {
-    try {
-      const response = await fetch(`/api/schools?category=${category}`);
-      const data = await response.json();
-      setSchools(data);
-    } catch (error) {
-      console.error('Error fetching schools:', error);
-    }
-  };
-
-  const handleVoteSubmit = async (voteData) => {
-    try {
-      const response = await fetch('/api/vote', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(voteData)
-      });
-
-      if (response.ok) {
-        alert('Vote submitted successfully!');
-        setSelectedSchool(null);
-        fetchSchools(selectedCategory); // Refresh school data
-      } else {
-        alert('Failed to submit vote');
-      }
-    } catch (error) {
-      console.error('Error submitting vote:', error);
-      alert('Error submitting vote');
-    }
-  };
-
-  const filteredSchools = schools.filter(school =>
-    school.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredSchools = schools.filter((s) =>
+    s.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
-    <div>
-      {/* Header */}
-      <header>
-        <h1>🗳️ VOTE NOW!</h1>
-        <p>Cast your favorite candidate!</p>
-      </header>
-
-      {/* Countdown */}
-      <Countdown endTime={eventEndTime} />
-
-      {/* Category Tabs */}
-      <div className="category-tabs">
-        {['SD', 'SMP', 'SMA/SMK'].map(cat => (
-          <button
-            key={cat}
-            onClick={() => setSelectedCategory(cat)}
-            className={`px-8 py-3 rounded-lg font-bold transition ${
-              selectedCategory === cat
-                ? 'bg-yellow-400 text-brown-900'
-                : 'bg-white text-brown-900 hover:bg-yellow-200'
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
-
-      {/* Search Bar */}
-      <div className="search-bar">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          placeholder="Search schools..."
-          className="w-full px-6 py-4 rounded-lg text-lg border-4 border-brown-800 focus:outline-none focus:ring-4 focus:ring-yellow-400"
-        />
-      </div>
-
-      {/* Schools Grid */}
-      <div className="schools-grid grid grid-cols-1 md:grid-cols-3 gap-4">
-        {filteredSchools.map(school => (
-          <SchoolCard
-            key={school.id}
-            school={school}
-            onVoteClick={() => setSelectedSchool(school)}
+    <div className="min-h-screen bg-[#072f47] text-white pt-24 pb-20 px-4">
+      <div className="max-w-6xl mx-auto bg-[#3b2a1a] rounded-3xl p-6 md:p-10 shadow-2xl border-4 border-yellow-500 relative">
+        
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-6">
+          <div className="text-center md:text-left">
+            <h1 className="text-4xl font-black text-yellow-400 italic uppercase">Vote Now!</h1>
+            <p className="text-yellow-100/70 font-bold italic">Support your favorite SMP & SMA contestants</p>
+          </div>
+          <input
+            type="text"
+            placeholder="Search school..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="px-6 py-3 rounded-full border-4 border-yellow-500 bg-[#f7e6c4] text-[#3b2a1a] font-bold outline-none w-full md:w-72"
           />
-        ))}
+        </div>
+
+        {/* Category Tabs */}
+        <div className="flex justify-center gap-3 mb-10">
+          {Object.keys(categoryMap).map((cat) => (
+            <button
+              key={cat}
+              onClick={() => handleCategoryChange(cat)} // Gunakan fungsi handle baru
+              className={`px-6 py-2 rounded-full font-black transition-all border-2 ${
+                selectedCategory === cat
+                  ? "bg-yellow-400 text-[#3b2a1a] border-yellow-600 scale-105 shadow-lg"
+                  : "bg-[#f7e6c4] text-[#5a3b1e] border-[#d8b36a] hover:bg-yellow-100"
+              }`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        {/* sisanya sama... */}
+        <div className="mb-12 bg-black/40 p-6 rounded-2xl border border-yellow-600/20">
+          <Countdown endTime={eventEndTime} />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          {loading ? (
+            <p className="col-span-full text-center text-yellow-500 font-bold animate-pulse uppercase tracking-widest">Loading Data...</p>
+          ) : filteredSchools.length > 0 ? (
+            filteredSchools.map((school) => (
+              <SchoolCard 
+                key={school.id} 
+                school={school} 
+                onVoteClick={() => setSelectedSchool(school)} 
+              />
+            ))
+          ) : (
+            <p className="col-span-full text-center italic text-yellow-100/40 py-10">No schools found in this category.</p>
+          )}
+        </div>
       </div>
 
-      {/* Vote Modal */}
       {selectedSchool && (
-        <VoteModal
-          school={selectedSchool}
-          onClose={() => setSelectedSchool(null)}
-          onSubmit={handleVoteSubmit}
+        <VoteModal 
+          school={selectedSchool} 
+          onClose={() => setSelectedSchool(null)} 
+          onSuccess={loadSchools} 
         />
       )}
     </div>
