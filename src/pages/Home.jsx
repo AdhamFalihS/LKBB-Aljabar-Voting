@@ -3,132 +3,149 @@ import { useNavigate } from 'react-router-dom';
 
 function Home() {
   const navigate = useNavigate();
-  // Update: Mengatur waktu berakhir ke 17 Mei 2026
   const eventEndTime = '2026-05-17T23:59:59';
 
   return (
-    <div className="bg-gradient-to-b from-[#0b4f78] via-[#0a3b5c] to-[#072f47] text-white relative overflow-hidden min-h-screen">
+    <div className="bg-gradient-to-b from-yellow-50 via-amber-100 to-orange-100 text-amber-900 relative overflow-hidden min-h-screen">
 
-      {/* CONTENT WRAPPER */}
-      <div className="max-w-6xl mx-auto px-4 pt-24 pb-20">
+      {/* CONTENT WRAPPER - Added MORE padding top for Top Marquee */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 pt-28 sm:pt-24 lg:pt-40 pb-24 sm:pb-20">
 
-        {/* 1. TOP SECTION: BANNER */}
-        <div className="flex justify-center mb-10">
-          <div className="relative bg-[#123f5a] rounded-3xl p-4 shadow-2xl w-full border border-white/10 overflow-hidden">
+        {/* 1. HERO BANNER */}
+        <div className="flex justify-center mb-6 sm:mb-12">
+          <div className="relative bg-gradient-to-br from-white to-amber-50 rounded-2xl sm:rounded-3xl p-3 sm:p-4 lg:p-6 shadow-2xl w-full border-2 border-amber-300 overflow-hidden group">
             
-            <div className="relative h-[350px] md:h-[500px] w-full group">
+            <div className="relative h-[450px] sm:h-[400px] lg:h-[500px] w-full">
               <img
                 src="/images/BG Aljabar.jpeg" 
-                alt="Event Banner"
-                className="rounded-2xl w-full h-full object-cover shadow-lg transition-transform duration-700 group-hover:scale-105"
+                alt="PASUGAMA Banner"
+                className="rounded-xl sm:rounded-2xl w-full h-full object-cover shadow-lg transition-transform duration-700 group-hover:scale-105"
               />
               
-              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent rounded-2xl"></div>
+              {/* Overlay Gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-red-900/90 via-red-800/40 to-transparent rounded-xl sm:rounded-2xl"></div>
 
-              <div className="absolute inset-0 flex flex-col justify-end items-center pb-8 md:pb-12 text-center px-4">
-                <span className="bg-orange-500 text-[10px] md:text-xs px-4 py-1.5 rounded-full font-black tracking-widest uppercase shadow-lg mb-3 animate-fade-in">
-                  LKBB ALJABAR
+              {/* Banner Content */}
+              <div className="absolute inset-0 flex flex-col justify-end items-center pb-6 sm:pb-8 lg:pb-12 text-center px-3 sm:px-4">
+                <span className="bg-red-600 text-white text-xs sm:text-sm px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-bold tracking-wider uppercase shadow-lg mb-3 sm:mb-4 animate-pulse">
+                  LOMBA PASKIBRA
                 </span>
 
-                <h1 className="text-4xl md:text-7xl font-black tracking-tighter drop-shadow-2xl text-yellow-400 leading-none mb-2">
-                  LKBB ALJABAR 2026
+                <h1 className="text-3xl sm:text-5xl lg:text-7xl font-black tracking-tight drop-shadow-2xl text-white leading-tight mb-2">
+                  PASUGAMA
+                  <span className="block text-xl sm:text-3xl lg:text-5xl text-red-200 mt-1">2026</span>
                 </h1>
 
-                <p className="text-white text-base md:text-xl font-bold opacity-90 drop-shadow-md">
+                <p className="text-red-100 text-sm sm:text-base lg:text-xl font-semibold opacity-90 drop-shadow-md mb-4 sm:mb-6">
                   SMKN 11 SEMARANG
                 </p>
 
                 <button 
                   onClick={() => navigate('/vote')}
-                  className="mt-6 bg-orange-500 hover:bg-orange-600 hover:scale-105 active:scale-95 transition-all px-10 py-4 rounded-2xl font-black shadow-[0_10px_25px_rgba(249,115,22,0.5)] tracking-widest uppercase text-sm border-b-4 border-orange-700"
+                  className="bg-red-600 hover:bg-red-700 hover:scale-105 active:scale-95 transition-all duration-300 px-6 sm:px-10 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-bold shadow-xl tracking-wide uppercase text-sm sm:text-base border-b-4 border-red-800 text-white"
                 >
-                  SUPPORT NOW
+                  <span className="hidden sm:inline">🏆 </span>DUKUNG SEKARANG
                 </button>
               </div>
             </div>
           </div>
         </div>
 
-        {/* 2. MIDDLE SECTION: 2 COLUMNS */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+        {/* 2. FEATURE CARDS */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-6 sm:mb-12">
           
-          {/* VOTE CARD (Hanya Mention SMP & SMA) */}
+          {/* Vote Card */}
           <div 
             onClick={() => navigate('/vote')}
-            className="group bg-gradient-to-br from-purple-600 to-indigo-800 rounded-3xl p-8 shadow-2xl border-4 border-yellow-400 flex flex-col items-center justify-center text-center transition-all duration-500 hover:rotate-2 hover:scale-[1.03] hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)] cursor-pointer"
+            className="group bg-gradient-to-br from-red-600 to-red-800 rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-2xl border-4 border-amber-200 flex flex-col items-center justify-center text-center transition-all duration-500 hover:rotate-1 hover:scale-[1.02] hover:shadow-3xl cursor-pointer min-h-[240px] sm:min-h-[280px]"
           >
-            <h3 className="font-black text-2xl tracking-tight text-white italic transition-all duration-500 group-hover:scale-110">
-              SUPPORT YOUR FAVORITE!
+            <div className="bg-white/20 rounded-full p-3 sm:p-4 mb-3 sm:mb-4 group-hover:scale-110 transition-transform duration-300">
+              <span className="text-3xl sm:text-4xl">🗳️</span>
+            </div>
+            
+            <h3 className="font-black text-xl sm:text-2xl tracking-tight text-white mb-2 sm:mb-3 group-hover:scale-105 transition-transform duration-300">
+              DUKUNG FAVORIT ANDA!
             </h3>
             
-            <p className="text-purple-100 mt-2 font-medium">
-              Your vote determines the champion of SMP & SMA!
+            <p className="text-red-100 text-sm sm:text-base font-medium mb-4 sm:mb-6 leading-relaxed">
+              Suara Anda menentukan juara tingkat SMP & SMA/SMK
             </p>
 
-            <button className="mt-6 bg-yellow-400 hover:bg-yellow-300 hover:scale-110 active:scale-90 transition-all text-[#3b2a1a] font-black px-10 py-4 rounded-2xl shadow-xl flex items-center gap-2 border-b-4 border-yellow-600 group-hover:animate-pulse">
-              <span className="text-xl">💀</span> CAST YOUR VOTE
-            </button>
+            <div className="bg-white hover:bg-amber-50 hover:scale-105 active:scale-95 transition-all duration-300 text-red-600 font-bold px-6 sm:px-8 py-3 sm:py-4 rounded-xl shadow-lg border-2 border-red-200">
+              MULAI VOTING
+            </div>
           </div>
 
-          {/* TEASER GALLERY */}
-          <div className="bg-[#1c5d8a]/50 backdrop-blur-sm rounded-3xl p-8 shadow-xl border border-white/10">
-            <h4 className="font-black text-xl mb-6 tracking-widest flex items-center gap-2 text-yellow-400">
-              🖼️ TREASURE GALLERY
+          {/* Gallery Teaser */}
+          <div className="bg-gradient-to-br from-amber-100 to-orange-100 rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xl border-2 border-amber-200">
+            <h4 className="font-bold text-lg sm:text-xl mb-4 sm:mb-6 tracking-wide flex items-center gap-2 text-amber-800">
+              📸 GALERI KEGIATAN
             </h4>
-            <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-              <div className="group relative overflow-hidden rounded-2xl border-4 border-[#3b2a1a] shadow-lg transition-all duration-500 hover:rotate-6 hover:scale-110 cursor-pointer">
-                 <img src="/images/foto1.jpg" alt="thumb" className="w-32 h-32 md:w-40 md:h-40 object-cover" />
+            
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+              <div className="group relative overflow-hidden rounded-xl border-3 border-amber-300 shadow-lg transition-all duration-500 hover:rotate-3 hover:scale-105 cursor-pointer aspect-square">
+                 <img src="/images/foto1.jpg" alt="Kegiatan 1" className="w-full h-full object-cover" />
+                 <div className="absolute inset-0 bg-red-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </div>
-              <div className="group relative overflow-hidden rounded-2xl border-4 border-[#3b2a1a] shadow-lg transition-all duration-500 hover:-rotate-6 hover:scale-110 cursor-pointer">
-                <img src="/images/foto2.jpg" alt="thumb" className="w-32 h-32 md:w-40 md:h-40 object-cover" />
+              <div className="group relative overflow-hidden rounded-xl border-3 border-amber-300 shadow-lg transition-all duration-500 hover:-rotate-3 hover:scale-105 cursor-pointer aspect-square">
+                <img src="/images/foto2.jpg" alt="Kegiatan 2" className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-red-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               </div>
+            </div>
+            
+            <div className="mt-4 text-center">
+              <button className="text-amber-700 hover:text-red-600 font-semibold text-sm transition-colors duration-200">
+                Lihat Semua →
+              </button>
             </div>
           </div>
 
         </div>
 
-        {/* 3. BOTTOM SECTION: COUNTDOWN & SCHEDULE */}
-        <div className="space-y-10">
+        {/* 3. COUNTDOWN & SCHEDULE */}
+        <div className="space-y-6 sm:space-y-10">
           
-          <div className="bg-black/20 rounded-3xl p-8 backdrop-blur-md border border-white/5 shadow-inner">
-            <h5 className="text-center font-black text-yellow-400 mb-6 tracking-widest uppercase flex items-center justify-center gap-2">
-              <span className="animate-pulse">⏱️</span> Voting Ends In
+          {/* Countdown Section */}
+          <div className="bg-gradient-to-r from-red-600/10 via-red-500/5 to-amber-500/10 rounded-2xl sm:rounded-3xl p-4 sm:p-8 backdrop-blur-sm border-2 border-red-200 shadow-xl">
+            <h5 className="text-center font-bold text-red-700 mb-4 sm:mb-6 tracking-wide uppercase flex items-center justify-center gap-2 text-base sm:text-xl">
+              <span className="animate-pulse">⏰</span> Voting Berakhir Dalam
             </h5>
             <Countdown endTime={eventEndTime} />
           </div>
 
-          <div className="bg-[#f5e1b8] text-[#3b2a1a] rounded-3xl p-8 shadow-[0_20px_50px_rgba(0,0,0,0.4)] border-b-8 border-[#d8b36a]">
-            <h2 className="font-black text-3xl mb-8 flex items-center gap-3 border-b-2 border-[#3b2a1a]/10 pb-4">
-              📅 EVENT SCHEDULE
+          {/* Schedule Section */}
+          <div className="bg-gradient-to-br from-amber-50 to-orange-50 text-amber-900 rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-2xl border-4 border-amber-200">
+            <h2 className="font-black text-xl sm:text-3xl mb-4 sm:mb-8 flex items-center gap-2 sm:gap-3 border-b-2 border-amber-200 pb-3 sm:pb-4 text-red-700">
+              📅 JADWAL ACARA
             </h2>
 
-            <div className="space-y-6">
-              {/* JADWAL SMP */}
-              <div className="flex flex-col md:flex-row gap-4 p-5 rounded-2xl bg-white/30 border border-white/20 hover:bg-white/50 transition duration-300">
-                <span className="bg-red-600 text-white font-black px-6 py-2 rounded-xl text-lg shadow-md self-start">
+            <div className="space-y-3 sm:space-y-6">
+              {/* SMP Schedule */}
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-white border-2 border-red-200 hover:border-red-300 hover:shadow-lg transition-all duration-300">
+                <span className="bg-red-600 text-white font-bold px-4 sm:px-6 py-2 rounded-lg text-sm sm:text-lg shadow-md self-start whitespace-nowrap">
                   07:00
                 </span>
-                <div>
-                  <p className="font-black text-xl">Sabtu, 16 Mei 2026</p>
-                  <p className="font-bold opacity-80 text-lg uppercase text-indigo-900">Tingkat SMP / MTs</p>
-                  <p className="text-sm font-bold text-gray-600">SMKN 11 Semarang</p>
-                  <p className="text-sm italic mt-2 text-red-600 font-bold">
-                    ⚔️ Petualangan dimulai...
+                <div className="flex-1">
+                  <p className="font-black text-base sm:text-xl text-red-700">Sabtu, 16 Mei 2026</p>
+                  <p className="font-bold text-sm sm:text-base text-amber-800 uppercase mb-1">Tingkat SMP / MTs</p>
+                  <p className="text-xs sm:text-sm font-semibold text-amber-700">SMKN 11 Semarang</p>
+                  <p className="text-xs sm:text-sm italic mt-2 text-red-600 font-semibold">
+                    🎖️ Hari pertama kompetisi
                   </p>
                 </div>
               </div>
 
-              {/* JADWAL SMA */}
-              <div className="flex flex-col md:flex-row gap-4 p-5 rounded-2xl bg-white/30 border border-white/20 hover:bg-white/50 transition duration-300">
-                <span className="bg-red-600 text-white font-black px-6 py-2 rounded-xl text-lg shadow-md self-start">
+              {/* SMA Schedule */}
+              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 p-4 sm:p-5 rounded-xl sm:rounded-2xl bg-white border-2 border-red-200 hover:border-red-300 hover:shadow-lg transition-all duration-300">
+                <span className="bg-red-600 text-white font-bold px-4 sm:px-6 py-2 rounded-lg text-sm sm:text-lg shadow-md self-start whitespace-nowrap">
                   07:00
                 </span>
-                <div>
-                  <p className="font-black text-xl">Minggu, 17 Mei 2026</p>
-                  <p className="font-bold opacity-80 text-lg uppercase text-indigo-900">Tingkat SMA / SMK / MA</p>
-                  <p className="text-sm font-bold text-gray-600">SMKN 11 Semarang</p>
-                  <p className="text-sm italic mt-2 text-red-600 font-bold">
-                    ⚔️ Pertempuran Puncak...
+                <div className="flex-1">
+                  <p className="font-black text-base sm:text-xl text-red-700">Minggu, 17 Mei 2026</p>
+                  <p className="font-bold text-sm sm:text-base text-amber-800 uppercase mb-1">Tingkat SMA / SMK / MA</p>
+                  <p className="text-xs sm:text-sm font-semibold text-amber-700">SMKN 11 Semarang</p>
+                  <p className="text-xs sm:text-sm italic mt-2 text-red-600 font-semibold">
+                    🏆 Grand finale kompetisi
                   </p>
                 </div>
               </div>
