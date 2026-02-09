@@ -1,8 +1,9 @@
 // SchoolCard.jsx
 function SchoolCard({ school, onVoteClick }) {
   return (
-    <div className="group bg-gradient-to-br from-white to-amber-50 rounded-xl sm:rounded-2xl overflow-hidden shadow-lg border-3 border-amber-200 hover:border-red-400 transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer">
+    <div className="group bg-gradient-to-br from-white to-amber-50 rounded-xl sm:rounded-2xl overflow-hidden shadow-lg border-3 border-amber-200 hover:border-red-400 transition-all duration-300 hover:scale-105 hover:shadow-2xl cursor-pointer relative">
       
+      {/* Badge Ranking untuk Top 3 */}
       {school.rank && school.rank <= 3 && (
         <div className="absolute top-2 left-2 z-10">
           <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center font-black text-white shadow-lg border-2 border-white
@@ -16,21 +17,29 @@ function SchoolCard({ school, onVoteClick }) {
         </div>
       )}
 
+      {/* Image Section - FIX: Gunakan image_url dari database */}
       <div className="relative h-32 sm:h-40 bg-gradient-to-br from-red-100 to-amber-100 overflow-hidden">
-        {school.image ? (
+        {school.image_url ? (
           <img 
-            src={school.image} 
+            src={school.image_url} 
             alt={school.name}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.parentElement.querySelector('.fallback-icon').style.display = 'flex';
+            }}
           />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="text-5xl sm:text-6xl opacity-30">🏫</div>
-          </div>
-        )}
+        ) : null}
         
+        {/* Fallback Icon */}
+        <div className={`fallback-icon w-full h-full flex items-center justify-center ${school.image_url ? 'hidden' : 'flex'}`}>
+          <div className="text-5xl sm:text-6xl opacity-30">🏫</div>
+        </div>
+        
+        {/* Gradient Overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
         
+        {/* Vote Badge */}
         <div className="absolute bottom-2 right-2 bg-red-600 text-white px-3 py-1.5 rounded-lg shadow-lg border-2 border-white">
           <div className="flex items-center gap-1">
             <span className="text-xs sm:text-sm font-black">{school.total_votes || 0}</span>
@@ -39,11 +48,14 @@ function SchoolCard({ school, onVoteClick }) {
         </div>
       </div>
 
+      {/* Content Section */}
       <div className="p-4 sm:p-5">
+        {/* School Name */}
         <h3 className="font-black text-base sm:text-lg text-red-700 mb-2 sm:mb-3 line-clamp-2 min-h-[3rem] sm:min-h-[3.5rem] leading-tight group-hover:text-red-800 transition-colors">
           {school.name}
         </h3>
 
+        {/* Stats Section */}
         <div className="flex items-center justify-between mb-3 sm:mb-4 pb-3 border-b-2 border-amber-100">
           <div className="flex items-center gap-1 text-amber-700">
             <span className="text-sm sm:text-base">📊</span>
@@ -55,6 +67,7 @@ function SchoolCard({ school, onVoteClick }) {
           </div>
         </div>
 
+        {/* Vote Button */}
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -69,6 +82,7 @@ function SchoolCard({ school, onVoteClick }) {
         </button>
       </div>
 
+      {/* Hover Border Effect */}
       <div className="absolute inset-0 border-2 border-red-500 rounded-xl sm:rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
     </div>
   );

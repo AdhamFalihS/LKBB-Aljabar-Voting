@@ -112,13 +112,13 @@ function Vote() {
               <span>🏆</span> PILIH KATEGORI
             </h3>
             
-            {/* Category Buttons - HORIZONTAL di mobile, CENTER compact di desktop */}
-            <div className="flex flex-row sm:justify-center gap-3 sm:gap-4 mb-5 sm:mb-6">
+            {/* Category Buttons - HORIZONTAL */}
+            <div className="flex flex-row justify-center gap-3 sm:gap-4 mb-5 sm:mb-6">
               {Object.keys(categoryMap).map((cat) => (
                 <button
                   key={cat}
                   onClick={() => handleCategoryChange(cat)}
-                  className={`flex-1 sm:flex-none px-6 sm:px-10 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black transition-all duration-300 border-4 text-sm sm:text-lg uppercase tracking-wide shadow-lg ${
+                  className={`flex-1 max-w-xs px-6 sm:px-10 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black transition-all duration-300 border-4 text-sm sm:text-lg uppercase tracking-wide shadow-lg ${
                     selectedCategory === cat
                       ? "bg-red-600 text-white border-red-800 scale-105 shadow-2xl transform hover:scale-110"
                       : "bg-white text-red-600 border-amber-200 hover:bg-amber-50 hover:border-red-300 hover:scale-105"

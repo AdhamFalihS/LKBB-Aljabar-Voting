@@ -7,6 +7,12 @@ html, body, #root {
   padding: 0;
   width: 100%;
   min-height: 100%;
+
+  /* Native smooth scroll */
+  scroll-behavior: smooth;
+
+  /* Mobile momentum scrolling */
+  -webkit-overflow-scrolling: touch;
 }
 
 /* MARQUEE */
@@ -16,13 +22,12 @@ html, body, #root {
   background-size: auto 100%;
 }
 
-/* Hide scrollbar for Chrome, Safari and Opera */
+/* Hide scrollbar */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
 
-/* Hide scrollbar for IE, Edge and Firefox */
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

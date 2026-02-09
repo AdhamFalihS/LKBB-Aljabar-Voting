@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../utils/supabaseClient";
+import { motion } from "framer-motion";
 
 function Leaderboard() {
   const categoryMap = { "SMP": 1, "SMA/SMK": 2 };
@@ -32,6 +33,66 @@ function Leaderboard() {
     }
   };
 
+  /* =======================
+     🎬 ANIMATION VARIANTS
+     ======================= */
+  
+  // Bar naik dari bawah
+  const barVariant = {
+    hidden: { scaleY: 0 },
+    visible: (delay) => ({
+      scaleY: 1,
+      transition: {
+        delay,
+        duration: 0.5,
+        ease: "easeOut"
+      }
+    })
+  };
+
+  // Avatar muncul setelah bar selesai
+  const avatarVariant = {
+    hidden: { scale: 0, opacity: 0 },
+    visible: (delay) => ({
+      scale: 1,
+      opacity: 1,
+      transition: {
+        delay,
+        duration: 0.3,
+        ease: "backOut"
+      }
+    })
+  };
+
+  // Mahkota muncul terakhir dengan bounce
+  const crownVariant = {
+    hidden: { y: -30, opacity: 0, scale: 0 },
+    visible: (delay) => ({
+      y: 0,
+      opacity: 1,
+      scale: 1,
+      transition: {
+        delay,
+        duration: 0.4,
+        ease: "backOut"
+      }
+    })
+  };
+
+  // Animasi untuk list item (fade in dari bawah)
+  const listItemVariant = {
+    hidden: { opacity: 0, y: 20 },
+    visible: (index) => ({
+      opacity: 1,
+      y: 0,
+      transition: {
+        delay: 2.0 + (index * 0.05), // Mulai setelah podium selesai
+        duration: 0.3,
+        ease: "easeOut"
+      }
+    })
+  };
+
   const renderPodium = () => {
     if (leaderboard.length === 0) return null;
 
@@ -46,7 +107,9 @@ function Leaderboard() {
         bgColor: "from-blue-400 to-blue-600", 
         h: "h-36 sm:h-44 md:h-52", 
         medal: "🥈",
-        avatarSize: "w-14 h-14 sm:w-18 sm:h-18 md:w-20 md:h-20"
+        avatarSize: "w-14 h-14 sm:w-18 sm:h-18 md:w-20 md:h-20",
+        barDelay: 0.6,
+        avatarDelay: 1.1
       },
       { 
         data: top1, 
@@ -55,7 +118,10 @@ function Leaderboard() {
         h: "h-44 sm:h-56 md:h-64", 
         medal: "🥇",
         avatarSize: "w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24",
-        crown: true
+        crown: true,
+        barDelay: 0,
+        avatarDelay: 0.5,
+        crownDelay: 0.8
       },
       { 
         data: top3, 
@@ -63,7 +129,9 @@ function Leaderboard() {
         bgColor: "from-orange-400 to-orange-600", 
         h: "h-32 sm:h-40 md:h-48", 
         medal: "🥉",
-        avatarSize: "w-14 h-14 sm:w-18 sm:h-18 md:w-20 md:h-20"
+        avatarSize: "w-14 h-14 sm:w-18 sm:h-18 md:w-20 md:h-20",
+        barDelay: 1.2,
+        avatarDelay: 1.7
       },
     ];
 
@@ -74,13 +142,28 @@ function Leaderboard() {
 
           return (
             <div key={item.data.id} className="flex flex-col items-center">
+              
+              {/* 👑 MAHKOTA - muncul paling akhir */}
               {item.crown && (
-                <div className="mb-2 animate-bounce">
+                <motion.div
+                  variants={crownVariant}
+                  initial="hidden"
+                  animate="visible"
+                  custom={item.crownDelay}
+                  className="mb-2"
+                >
                   <span className="text-3xl sm:text-4xl md:text-5xl drop-shadow-lg">👑</span>
-                </div>
+                </motion.div>
               )}
 
-              <div className="relative mb-2 sm:mb-3">
+              {/* 👤 AVATAR - muncul setelah bar */}
+              <motion.div
+                variants={avatarVariant}
+                initial="hidden"
+                animate="visible"
+                custom={item.avatarDelay}
+                className="relative mb-2 sm:mb-3"
+              >
                 <div className={`${item.avatarSize} rounded-full border-4 sm:border-[5px] border-amber-400 overflow-hidden bg-white shadow-2xl ring-2 ring-amber-200`}>
                   <img 
                     src={item.data.image_url} 
@@ -91,9 +174,17 @@ function Leaderboard() {
                 <div className="absolute -bottom-1.5 sm:-bottom-2 left-1/2 -translate-x-1/2 bg-red-600 text-white text-[9px] sm:text-xs font-black px-2 py-0.5 sm:py-1 rounded-full border-2 border-white shadow-lg">
                   {item.data.total_votes}
                 </div>
-              </div>
+              </motion.div>
 
-              <div className={`${item.h} w-20 sm:w-28 md:w-36 bg-gradient-to-b ${item.bgColor} rounded-t-2xl border-x-4 border-t-4 sm:border-x-[5px] sm:border-t-[5px] border-amber-400 flex flex-col items-center justify-start pt-2 sm:pt-3 shadow-2xl`}>
+              {/* 🟨 BAR - naik duluan dengan warna sesuai juara */}
+              <motion.div
+                variants={barVariant}
+                initial="hidden"
+                animate="visible"
+                custom={item.barDelay}
+                style={{ originY: 1 }}
+                className={`${item.h} w-20 sm:w-28 md:w-36 bg-gradient-to-b ${item.bgColor} rounded-t-2xl border-x-4 border-t-4 sm:border-x-[5px] sm:border-t-[5px] border-amber-400 flex flex-col items-center justify-start pt-2 sm:pt-3 shadow-2xl`}
+              >
                 <div className="bg-white rounded-full w-8 h-8 sm:w-11 sm:h-11 md:w-12 md:h-12 flex items-center justify-center shadow-lg border-2 border-amber-300 mb-1 sm:mb-2">
                   <span className="text-xl sm:text-2xl md:text-3xl">{item.medal}</span>
                 </div>
@@ -103,7 +194,7 @@ function Leaderboard() {
                     {item.data.name}
                   </p>
                 </div>
-              </div>
+              </motion.div>
             </div>
           );
         })}
@@ -125,7 +216,12 @@ function Leaderboard() {
       <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 pt-24 sm:pt-32 pb-12 sm:pb-16 relative z-10">
         
         {/* HEADER - Ukuran diperbesar untuk Desktop dan jarak diatur */}
-        <div className="mb-6 sm:mb-10 flex justify-center">
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mb-6 sm:mb-10 flex justify-center"
+        >
           <div className="bg-gradient-to-r from-red-600 via-red-500 to-red-600 border-4 sm:border-[6px] border-yellow-400 rounded-xl sm:rounded-2xl px-8 sm:px-14 md:px-20 py-4 sm:py-6 shadow-2xl">
             <div className="flex items-center justify-center gap-3 sm:gap-4">
               <span className="text-3xl sm:text-4xl md:text-6xl">🏆</span>
@@ -134,13 +230,18 @@ function Leaderboard() {
               </h1>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* CATEGORY BUTTONS */}
         <div className="mb-8 sm:mb-10 flex justify-center gap-2 sm:gap-4">
           {Object.keys(categoryMap).map((cat) => (
-            <button
+            <motion.button
               key={cat}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setSelectedCategory(cat)}
               className={`px-8 sm:px-12 md:px-16 py-3 sm:py-4 rounded-full font-black text-xs sm:text-lg md:text-xl uppercase tracking-wide border-4 shadow-lg transition-all duration-200 ${
                 selectedCategory === cat
@@ -152,16 +253,21 @@ function Leaderboard() {
                 {cat === "SMP" ? "🎓" : "🎯"}
               </span>
               {cat}
-            </button>
+            </motion.button>
           ))}
         </div>
 
         {/* CROWN SEPARATOR */}
-        <div className="flex justify-center mb-8 sm:mb-10">
+        <motion.div 
+          initial={{ opacity: 0, rotate: 0 }}
+          animate={{ opacity: 1, rotate: 45 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="flex justify-center mb-8 sm:mb-10"
+        >
           <div className="bg-gradient-to-br from-yellow-300 to-amber-400 w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 rounded-2xl rotate-45 border-4 border-amber-500 shadow-xl flex items-center justify-center">
             <span className="text-xl sm:text-2xl md:text-3xl -rotate-45">👑</span>
           </div>
-        </div>
+        </motion.div>
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-16">
@@ -173,7 +279,12 @@ function Leaderboard() {
             {renderPodium()}
 
             {others.length > 0 && (
-              <div className="bg-white/90 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-2xl border-3 border-amber-300">
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 1.8 }}
+                className="bg-white/90 backdrop-blur-sm rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-2xl border-3 border-amber-300"
+              >
                 <div className="flex items-center justify-between mb-4 pb-3 border-b-2 border-amber-200">
                   <h3 className="font-black text-sm sm:text-lg text-red-700 uppercase flex items-center gap-2">
                     <span>📊</span> 
@@ -188,8 +299,13 @@ function Leaderboard() {
                   {others.map((school, i) => {
                     const percent = (school.total_votes / maxVotes) * 100;
                     return (
-                      <div 
-                        key={school.id} 
+                      <motion.div 
+                        key={school.id}
+                        variants={listItemVariant}
+                        initial="hidden"
+                        animate="visible"
+                        custom={i}
+                        whileHover={{ scale: 1.02 }}
                         className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border-2 border-amber-300 p-3 shadow-md hover:shadow-lg transition-all"
                       >
                         <div className="flex items-center gap-3">
@@ -207,15 +323,20 @@ function Leaderboard() {
                               <p className="font-black text-red-700 text-sm">{school.total_votes}</p>
                             </div>
                             <div className="w-full h-2 bg-amber-100 rounded-full overflow-hidden">
-                              <div className="h-full bg-red-500" style={{ width: `${percent}%` }} />
+                              <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: `${percent}%` }}
+                                transition={{ duration: 0.8, delay: 2.0 + (i * 0.05) + 0.2 }}
+                                className="h-full bg-red-500"
+                              />
                             </div>
                           </div>
                         </div>
-                      </div>
+                      </motion.div>
                     );
                   })}
                 </div>
-              </div>
+              </motion.div>
             )}
           </div>
         )}
