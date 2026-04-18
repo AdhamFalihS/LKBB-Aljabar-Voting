@@ -98,27 +98,25 @@ function readEnv(...keys) {
   return '';
 }
 
-export function getServerEnv() {
-  const supabaseUrl = readEnv('SUPABASE_URL', 'VITE_SUPABASE_URL');
-  const supabaseAnonKey = readEnv('SUPABASE_ANON_KEY', 'VITE_SUPABASE_ANON_KEY');
-  const supabaseServiceRoleKey = readEnv('SUPABASE_SERVICE_ROLE_KEY');
-  const midtransServerKey = readEnv('MIDTRANS_SERVER_KEY');
-  const frontendUrl = readEnv('FRONTEND_URL');
+import { createClient } from '@supabase/supabase-js';
 
+export function getServerEnv() {
   return {
-    supabaseUrl,
-    supabaseAnonKey,
-    supabaseServiceRoleKey,
-    midtransServerKey,
-    frontendUrl
+    supabaseUrl: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
+    supabaseAnonKey: process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY,
+    supabaseServiceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+    midtransServerKey: process.env.MIDTRANS_SERVER_KEY,
+    frontendUrl: process.env.FRONTEND_URL
   };
 }
 
 export function createSupabaseClient(useServiceRole = false) {
   const env = getServerEnv();
-  const supabaseKey = useServiceRole
-    ? env.supabaseServiceRoleKey
-    : env.supabaseAnonKey || env.supabaseServiceRoleKey;
+  
+  // Gunakan Service Role untuk operasi backend (bypass RLS)
+  const supabaseKey = useServiceRole 
+    ? env.supabaseServiceRoleKey 
+    : (env.supabaseAnonKey || env.supabaseServiceRoleKey);
 
   if (!env.supabaseUrl) {
     throw new Error('SUPABASE_URL belum diset di environment server.');
@@ -128,7 +126,7 @@ export function createSupabaseClient(useServiceRole = false) {
     throw new Error(
       useServiceRole
         ? 'SUPABASE_SERVICE_ROLE_KEY belum diset di environment server.'
-        : 'SUPABASE_ANON_KEY atau SUPABASE_SERVICE_ROLE_KEY belum diset di environment server.'
+        : 'SUPABASE_ANON_KEY belum diset di environment server.'
     );
   }
 
