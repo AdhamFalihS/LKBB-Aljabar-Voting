@@ -5,121 +5,94 @@
 import crypto from 'crypto';
 import { createSupabaseClient, getServerEnv } from './_lib/server-env.js';
 
-/**
- * Verifikasi signature Midtrans untuk mencegah webhook palsu
- * Formula: SHA512(order_id + status_code + gross_amount + server_key)
- */
-function verifyMidtransSignature(orderId, statusCode, grossAmount, receivedSignature) {
+function verifySignature(orderId, statusCode, grossAmount, received) {
   const { midtransServerKey } = getServerEnv();
-  const rawString = `${orderId}${statusCode}${grossAmount}${midtransServerKey}`;
-  const expectedSignature = crypto
+  const hash = crypto
     .createHash('sha512')
-    .update(rawString)
+    .update(`${orderId}${statusCode}${grossAmount}${midtransServerKey}`)
     .digest('hex');
-  return expectedSignature === receivedSignature;
+  return hash === received;
 }
 
 export default async function handler(req, res) {
-  // Midtrans hanya mengirim POST
+  // Midtrans hanya POST — tidak perlu CORS (server-to-server)
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const env = getServerEnv();
+    const env      = getServerEnv();
     const supabase = createSupabaseClient(true);
 
     if (!env.midtransServerKey) {
-      throw new Error('MIDTRANS_SERVER_KEY belum diset di environment server.');
+      throw new Error('MIDTRANS_SERVER_KEY belum diset.');
     }
 
-    const notification = req.body;
+    const { order_id, transaction_status, fraud_status, status_code, gross_amount, signature_key } = req.body;
 
-    const {
-      order_id,
-      transaction_status,
-      fraud_status,
-      status_code,
-      gross_amount,
-      signature_key
-    } = notification;
-
-    // ─── 1. Verifikasi Signature (Security Layer) ─────────────
-    const isValidSignature = verifyMidtransSignature(
-      order_id,
-      status_code,
-      gross_amount,
-      signature_key
-    );
-
-    if (!isValidSignature) {
-      console.error('[webhook] Invalid signature for order:', order_id);
+    // ── 1. Verifikasi signature (keamanan) ────────────────────
+    if (!verifySignature(order_id, status_code, gross_amount, signature_key)) {
+      console.error('[webhook] Invalid signature:', order_id);
       return res.status(403).json({ error: 'Invalid signature' });
     }
 
-    // ─── 2. Ambil transaksi dari database ─────────────────────
-    const { data: transaction, error: txError } = await supabase
+    // ── 2. Ambil transaksi ────────────────────────────────────
+    const { data: trx, error: trxErr } = await supabase
       .from('payment_transactions')
       .select('*')
       .eq('order_id', order_id)
       .single();
 
-    if (txError || !transaction) {
-      console.error('[webhook] Transaction not found:', order_id);
+    if (trxErr || !trx) {
       return res.status(404).json({ error: 'Transaction not found' });
     }
 
-    // ─── 3. Cegah double-processing (idempotency) ─────────────
-    if (transaction.status === 'settlement' || transaction.status === 'capture') {
-      console.log('[webhook] Already processed:', order_id);
+    // ── 3. Idempotency — jangan proses dua kali ───────────────
+    if (['settlement', 'capture'].includes(trx.status)) {
       return res.status(200).json({ message: 'Already processed' });
     }
 
-    // ─── 4. Tentukan status berdasarkan notifikasi Midtrans ───
-    let newStatus = transaction.status;
+    // ── 4. Tentukan status baru ───────────────────────────────
+    let newStatus = trx.status;
 
     if (transaction_status === 'capture') {
       newStatus = fraud_status === 'accept' ? 'settlement' : 'fraud';
     } else if (transaction_status === 'settlement') {
       newStatus = 'settlement';
     } else if (['cancel', 'deny', 'expire'].includes(transaction_status)) {
-      newStatus = transaction_status; // cancel / deny / expire
+      newStatus = transaction_status;
     } else if (transaction_status === 'pending') {
       newStatus = 'pending';
     }
 
-    // ─── 5. Update status transaksi ───────────────────────────
-    const { error: updateTxError } = await supabase
+    // ── 5. Update status transaksi ────────────────────────────
+    const { error: updateErr } = await supabase
       .from('payment_transactions')
       .update({
-        status: newStatus,
-        paid_at: newStatus === 'settlement' ? new Date().toISOString() : null,
-        midtrans_notification: notification
+        status:                newStatus,
+        paid_at:               newStatus === 'settlement' ? new Date().toISOString() : null,
+        midtrans_notification: req.body,
       })
-      .eq('id', transaction.id);
+      .eq('id', trx.id);
 
-    if (updateTxError) throw new Error('Gagal update status transaksi');
+    if (updateErr) throw new Error('Gagal update transaksi: ' + updateErr.message);
 
-    // ─── 6. Jika settlement → proses vote ─────────────────────
+    // ── 6. Proses vote jika settlement ────────────────────────
     if (newStatus === 'settlement') {
-      await processVote(supabase, transaction);
+      await processVote(supabase, trx);
     }
 
     return res.status(200).json({ message: 'OK', status: newStatus });
 
-  } catch (error) {
-    console.error('[webhook] Error:', error);
-    return res.status(500).json({ error: error.message });
+  } catch (err) {
+    console.error('[webhook]', err);
+    return res.status(500).json({ error: err.message });
   }
 }
 
-/**
- * Proses vote setelah pembayaran berhasil
- * Menggunakan upsert + RPC increment untuk menghindari race condition
- */
-async function processVote(supabase, transaction) {
-  const { voter_name, school_id, vote_count } = transaction;
+async function processVote(supabase, trx) {
+  const { voter_name, school_id, vote_count, order_id, id: trx_id } = trx;
 
-  // ─── Upsert voter (insert jika baru, update jika sudah ada) ──
-  const { data: existingVoter } = await supabase
+  // Upsert voter
+  const { data: existing } = await supabase
     .from('voters')
     .select('id, total_votes')
     .eq('name', voter_name)
@@ -127,13 +100,12 @@ async function processVote(supabase, transaction) {
 
   let voter_id;
 
-  if (existingVoter) {
-    voter_id = existingVoter.id;
-    const { error } = await supabase
+  if (existing) {
+    voter_id = existing.id;
+    await supabase
       .from('voters')
-      .update({ total_votes: existingVoter.total_votes + vote_count })
+      .update({ total_votes: existing.total_votes + vote_count })
       .eq('id', voter_id);
-    if (error) throw new Error('Gagal update voter: ' + error.message);
   } else {
     const { data: newVoter, error } = await supabase
       .from('voters')
@@ -144,29 +116,24 @@ async function processVote(supabase, transaction) {
     voter_id = newVoter.id;
   }
 
-  // ─── Update total votes sekolah via RPC (atomic) ──────────
-  const { error: rpcError } = await supabase.rpc('increment_vote', {
-    school_id: school_id,
-    increment_by: vote_count
+  // Increment vote sekolah (atomic via RPC)
+  const { error: rpcErr } = await supabase.rpc('increment_vote', {
+    school_id,
+    increment_by: vote_count,
   });
-  if (rpcError) throw new Error('Gagal increment vote sekolah: ' + rpcError.message);
+  if (rpcErr) throw new Error('Gagal increment vote: ' + rpcErr.message);
 
-  // ─── Catat vote record ─────────────────────────────────────
-  const { error: voteError } = await supabase
+  // Catat vote record
+  const { error: voteErr } = await supabase
     .from('votes')
-    .insert({
-      voter_id,
-      school_id,
-      vote_count,
-      payment_order_id: transaction.order_id
-    });
-  if (voteError) throw new Error('Gagal insert vote record: ' + voteError.message);
+    .insert({ voter_id, school_id, vote_count, payment_order_id: order_id });
+  if (voteErr) throw new Error('Gagal insert vote: ' + voteErr.message);
 
-  // ─── Mark transaksi sebagai vote_processed ─────────────────
+  // Tandai transaksi sebagai vote_processed
   await supabase
     .from('payment_transactions')
     .update({ vote_processed: true })
-    .eq('id', transaction.id);
+    .eq('id', trx_id);
 
-  console.log(`[webhook] Vote processed: ${vote_count} votes for school ${school_id} by ${voter_name}`);
+  console.log(`[webhook] ✓ ${vote_count} vote untuk school ${school_id} oleh ${voter_name}`);
 }
